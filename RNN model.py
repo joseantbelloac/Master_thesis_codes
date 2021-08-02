@@ -15,8 +15,8 @@ files_location =  'D:/ThesisExperiments' # for running locally
 
 #Fixed parameters
 numberofepochs = 300    #epochs for all models
-seeds=7 		#for reproducing the model
-learning_rates= 3/1000  #helps define training speed
+seeds=[7] 		#for reproducing the model
+learning_rates= [3/1000]#helps define training speed
 display_step=100	#to show training evolution
 number_nodes =[1,0,-1]  #changing the number of nodes
 hours_forecast=[1,12,24]#changing the hours to forecast
@@ -186,7 +186,7 @@ alloutputtestrnn	--output data for testing set
                 scaleroutput.fit(alloutput)
                 alloutput=scaleroutput.transform(alloutput)
             
-    for j in range(np.shape(allinputrnn)[0]):   #### hacer el train test split por cada grupo de edificios entonces toca hacerlo por cada grupo de registros
+    for j in range(np.shape(allinputrnn)[0]): 
         alloutputrnn[j,:]=alloutput[j:(j+time_steps_output),0]
         for k in range(np.shape(allinput)[1]):
             allinputrnn[j,:,k]=allinput[j:(j+time_steps_input),k]
@@ -305,13 +305,9 @@ predictionstest	--the predictions for testing set
     elif celltype=='GRU':
         preds=states[-1][0]
 
-    loss=tf.reduce_sum(tf.losses.mean_squared_error(labels=Y,predictions=preds))
-    loss=loss*100000
-    #loss=tf.reduce_mean(tf.square(preds-Y))
+    loss=tf.reduce_sum(tf.losses.mean_squared_error(labels=Y,predictions=preds))*100000
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     train = optimizer.minimize(loss)
-    #train=tf.train.AdamOptimizer(learning_rate=0.003).minimize(loss)
-    #outreshape=outtrainrnn.reshape(outtrainrnn.shape[0],24)
     losstrainfile=[]
     mapetrain=[]
     losstestfile=[]
@@ -329,13 +325,13 @@ predictionstest	--the predictions for testing set
                 minibatch_out=minibatch_outp[mi]
                 
                 sess.run([train], feed_dict={X: minibatch_in, Y: minibatch_out})
-                         #,drpt1:dpt1, drpt2:dpt2, drpt3:dpt3, drpt4:dpt4, drpt5:dpt5, drpt6:dpt6, drpt7:dpt7, drpt8:dpt8}) #
+
                 if ((mi%(display_step*100)==0) and (step % display_step == 0)):
                     print('training for minibatch ' + str(mi) +' in epoch '+str(step)+' time '+str(datetime.datetime.now()))
                     mse=loss.eval(feed_dict={X:intrain,Y:outtrain})
                     print(step, "\tMSE",mse)
             
-            predictions, losses=sess.run([preds, loss], feed_dict={X:intrain,Y:outtrain}) #
+            predictions, losses=sess.run([preds, loss], feed_dict={X:intrain,Y:outtrain})
             losstrainfile.append(losses)
             mapetr=100*np.sum(np.absolute(np.divide(np.subtract(outtrain,predictions),outtrain)))/np.shape(outtrain)[0]
             mapetrain.append(mapetr)
@@ -351,6 +347,7 @@ predictionstest	--the predictions for testing set
 
 
 #this part iterates over the whole set of variations in architectures or inputs, also write the results of the models in csv files
+#using the name of each file for identify the correspondant model
 
 times=[]
 models=[]
@@ -390,7 +387,7 @@ for gr in groupsofbuildings:
                         RNNpredicttest.to_csv(files_location +'/OriginalData/ResultsBprevious/ResultsRNN24/GR9/PredTestLay'+str(nl)+'Hour'+str(hf)+'Nod'+str(i)+'Simvar'+str(k)+'Cell'+str(tc)+'gr'+str(gr)+'.csv')
 
 duration=pd.DataFrame({'models':models,'times':times})
-duration.to_csv(files_location +'/OriginalData/ResultsRNN24/node11timesgrbatch.csv')
+duration.to_csv(files_location +'/OriginalData/ResultsRNN24/timesRNNmodels.csv')
 
 finishedall=datetime.datetime.now() #create a variable with the starting time
 print('All started at: '+str(startedall)+' and all finished at: '+str(finishedall))
